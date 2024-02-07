@@ -6,7 +6,7 @@ setup(
     author='Michael Davies',
     author_email='michaelstoby@gmail.com',
     description='A simple tool for profiling and tracing PyTorch programs on NVIDIA GPUs',
-    long_description='',
+    long_description=open('README.md').read(),
     packages=find_packages(),
     install_requires=['numpy', 'pandas', 'torch'],
     entry_points = {
