@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='dnd',
+    name='dndlprof',
     version='0.1.0',
     author='Michael Davies',
     author_email='michaelstoby@gmail.com',
