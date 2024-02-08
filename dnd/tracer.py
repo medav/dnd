@@ -82,6 +82,18 @@ def trace(fn_or_module : 'callable', *args, **kwargs):
     compiled = torch.compile(fn_or_module, backend=aot_compile_fn)
     compiled(*args, **kwargs)
 
+def instrument(fn_or_module : 'callable', use_fx : bool = False):
+    global op_id
+    op_id = 0
+
+    if use_fx:
+        traced = torch.fx.symbolic_trace(fn_or_module)
+        return aot_module(traced, trace_compile_fn)
+
+    else:
+        compiled = torch.compile(fn_or_module, backend=aot_compile_fn)
+        return compiled(*args, **kwargs)
+
 def run_kernel_trace(prog_args, kernel_trace_file):
     env = os.environ.copy()
     env['CUDA_LAUNCH_BLOCKING'] = '1'
