@@ -58,14 +58,22 @@ def trace_compile_fn(gm : torch.fx.GraphModule, args):
 def aot_compile_fn(gm : torch.fx.GraphModule, args):
     return aot_module(gm, trace_compile_fn)
 
+region_active = False
+
 @contextmanager
 def trace_region(name):
     global tracefile
+    global region_active
+
+    assert not region_active, 'Nested trace_region\'s not supported'
+
+    region_active = True
     if tracefile is not None:
         with open(tracefile, 'a') as f:
             print(f'{name}:', file=f)
 
     yield
+    region_active = False
 
 def trace(fn_or_module : 'callable', *args, **kwargs):
     global op_id
