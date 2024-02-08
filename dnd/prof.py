@@ -183,6 +183,7 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
     kid = 0
     for row in nsys_df.iterrows():
         row = row[1]
+        if kid >= len(ordered_ids): break
         if row['Name'] != ordered_names[kid]: continue
 
         kerns.append(Kernel(
