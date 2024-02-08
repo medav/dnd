@@ -92,7 +92,9 @@ def run_kernel_trace(prog_args, kernel_trace_file):
 def lookup_kerns(kerns : 'list[prof.Kernel]', uid : str):
     return list(filter(lambda k: k.nvtx_range == uid, kerns))
 
-def process_stream(name, yd, kerns : 'list[prof.Kernel]', outfile):
+def process_region(name, yd, kerns : 'list[prof.Kernel]', outfile):
+    if yd is None: yd = []
+
     ops = []
     for opd in yd:
         ops.append(Operator(
@@ -114,6 +116,6 @@ def run_tracing(prog_args, kerns_file):
         yd = yaml.safe_load(open(temp_kern_trace_file.name, 'r'))
 
         with open(kerns_file, 'w') as f:
-            for sname in yd.keys():
-                process_stream(sname, yd[sname], kerns, f)
+            for rname in yd.keys():
+                process_region(rname, yd[rname], kerns, f)
 
