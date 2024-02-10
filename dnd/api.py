@@ -24,7 +24,7 @@ def instrument(fn_or_module : 'callable', use_fx : bool = False):
     else:
         return torch.compile(fn_or_module, backend=tracer.aot_compile_fn)
 
-def _benchmark(roi, *args, **kwargs):
+def _benchmark(roi, *args, no_compile : bool = False, **kwargs):
     print(f'Warmup with {env.bench_nw} Iters')
     for i in range(env.bench_nw): roi(*args, **kwargs)
 
