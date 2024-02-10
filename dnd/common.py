@@ -5,6 +5,7 @@ from distutils.spawn import find_executable
 import functools
 import json
 import yaml
+import subprocess
 
 def get_optional_env(name : str, default : str = None):
     return os.environ.get(name, default)
@@ -22,6 +23,22 @@ def command_exists(name):
 
 def parse_int_tuple(s : str):
     return tuple(map(int, s.replace('(', '').replace(')', '').split(',')))
+
+@contextmanager
+def check_subprocess():
+    try:
+        yield
+    except subprocess.CalledProcessError as e:
+        print('Error: subprocess returned with an error!')
+        print(e)
+        if e.stdout is not None:
+            print('==== STDOUT ====')
+            print(e.stdout.decode())
+        if e.stderr is not None:
+            print('==== STDERR ====')
+            print(e.stderr.decode())
+        print('================')
+        raise
 
 @dataclass
 class Kernel:

@@ -109,7 +109,8 @@ def run_ncu_nsys(
         '--metrics', ','.join(ncu_config.metrics)
     ] + prog_args
 
-    ncu_output = subprocess.check_output(cmdline, env=ncu_env).decode()
+    with check_subprocess():
+        ncu_output = subprocess.check_output(cmdline, env=ncu_env).decode()
 
     if not quiet:print('>>> Done!')
 
@@ -146,7 +147,8 @@ def run_ncu_nsys(
                 '--capture-range-end=stop'
             ]
 
-        subprocess.check_output(cmdline, env=nsys_env).decode()
+        with check_subprocess():
+            subprocess.check_output(cmdline, env=nsys_env).decode()
 
         if not quiet: print('>>> Done!')
 
@@ -162,7 +164,8 @@ def run_ncu_nsys(
             temp_nsys_rep
         ]
 
-        stats_output = subprocess.check_output(stats_cmdline).decode()
+        with check_subprocess():
+            stats_output = subprocess.check_output(stats_cmdline).decode()
 
     nsys_df = pd.read_csv(
         Reader(read_nsys_output(stats_output)),
