@@ -118,9 +118,9 @@ def stitch_and_print_region(
 
 
 def run_tracing(prog_args, kerns_file):
-    with tempfile.NamedTemporaryFile(suffix='.yaml') as temp_kern_trace_file:
-        kerns = run_kernel_trace(prog_args, temp_kern_trace_file.name)
-        yd = yaml.safe_load(open(temp_kern_trace_file.name, 'r'))
+    with temp_file(suffix='.yaml') as temp_kern_trace_file:
+        kerns = run_kernel_trace(prog_args, temp_kern_trace_file)
+        yd = yaml.safe_load(open(temp_kern_trace_file, 'r'))
 
         with open(kerns_file, 'w') as f:
             for rname in yd.keys():

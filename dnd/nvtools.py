@@ -130,7 +130,7 @@ def run_ncu_nsys(
         ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
 
 
-    with tempfile.NamedTemporaryFile(suffix='.nsys-rep') as temp_nsys_rep:
+    with temp_file(suffix='.nsys-rep') as temp_nsys_rep:
         if not quiet: print('>>> Running NSYS...')
         nsys_env = nsys_config.env.copy()
 
@@ -138,7 +138,7 @@ def run_ncu_nsys(
             NSYS_PATH,
             'profile',
             '-t', 'cuda,cudnn,cublas',
-            '-o', temp_nsys_rep.name
+            '-o', temp_nsys_rep
         ] + prog_args
 
         if use_cuda_profiler_api:
@@ -161,7 +161,7 @@ def run_ncu_nsys(
             'stats',
             '-r', report_name,
             '-f', 'csv',
-            temp_nsys_rep.name
+            temp_nsys_rep
         ]
 
         with check_subprocess():

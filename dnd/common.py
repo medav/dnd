@@ -6,6 +6,7 @@ import functools
 import json
 import yaml
 import subprocess
+import tempfile
 from contextlib import contextmanager
 
 def get_optional_env(name : str, default : str = None):
@@ -40,6 +41,12 @@ def check_subprocess():
             print(e.stderr.decode())
         print('================')
         raise
+
+@contextmanager
+def temp_file(suffix : str, delete : bool = True):
+    fname = tempfile.mktemp(suffix=suffix)
+    yield fname
+    if delete: os.remove(fname)
 
 @dataclass
 class Kernel:
