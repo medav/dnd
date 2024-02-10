@@ -94,26 +94,26 @@ def lookup_kerns(kerns : 'list[Kernel]', uid : str):
     return list(filter(lambda k: k.nvtx_range == uid, kerns))
 
 def stitch_ops_kerns(
-    op_uids : 'list[str]',
+    ops : 'list[dict]',
     kerns : 'list[Kernel]'
 ) -> 'list[Operator]':
     return [
-        Operator(uid=uid, kerns=lookup_kerns(kerns, uid))
-        for uid in op_uids
+        Operator(uid=op['uid'], kerns=lookup_kerns(kerns, op['uid']))
+        for op in ops
     ]
 
 def stitch_and_print_region(
     rname : str,
-    op_uids : 'list[str]',
+    orig_ops : 'list[dict]',
     kerns : 'list[Kernel]',
     outfile,
     indent : int = 0
 ):
-    if op_uids is None: op_uids = []
+    if orig_ops is None: orig_ops = []
 
     print(f'{"  " * indent}{rname}:', file=outfile)
     op : Operator
-    for op in stitch_ops_kerns(op_uids, kerns):
+    for op in stitch_ops_kerns(orig_ops, kerns):
         op.print_yaml(file=outfile, indent=indent + 1)
 
 
