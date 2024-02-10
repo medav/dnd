@@ -13,6 +13,7 @@ setup(
         'console_scripts': [
             'dnd=dnd.run:main',
             'dnd-stat=dnd.run:stat',
+            'dnd-overhead=dnd.run:overhead'
         ],
     },
 )

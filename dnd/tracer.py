@@ -13,9 +13,9 @@ from functorch.compile import aot_module
 from functorch.compile import make_boxed_func
 
 from .common import *
-from . import prof
+from . import nvtools
 
-tracefile = get_optional_env('LOOM_TRACEFILE')
+tracefile = get_optional_env('DND_TRACEFILE')
 
 ignore_aten_ops = {
     'aten.t.default',
@@ -75,51 +75,46 @@ def trace_region(name):
     yield
     region_active = False
 
-def trace(fn_or_module : 'callable', *args, **kwargs):
-    global op_id
-    op_id = 0
-
-    compiled = torch.compile(fn_or_module, backend=aot_compile_fn)
-    compiled(*args, **kwargs)
-
-def instrument(fn_or_module : 'callable', use_fx : bool = False):
-    global op_id
-    op_id = 0
-
-    if use_fx:
-        traced = torch.fx.symbolic_trace(fn_or_module)
-        return aot_module(traced, trace_compile_fn)
-
-    else:
-        compiled = torch.compile(fn_or_module, backend=aot_compile_fn)
-        return compiled(*args, **kwargs)
 
 def run_kernel_trace(prog_args, kernel_trace_file):
     env = os.environ.copy()
     env['CUDA_LAUNCH_BLOCKING'] = '1'
-    env['LOOM_TRACEFILE'] = kernel_trace_file
-    subprocess.check_call(prog_args, env=env)
-    return prof.run_prof(prog_args, ncu_use_nvtx=True)
+    env['DND_MODE'] = 'trace'
 
-def lookup_kerns(kerns : 'list[prof.Kernel]', uid : str):
+    ncu_env = env.copy()
+    env['DND_TRACEFILE'] = kernel_trace_file
+
+    return nvtools.run_ncu_nsys(
+        prog_args,
+        ncu_config=nvtools.NcuConfig(use_nvtx=True, env=ncu_env),
+        nsys_config=nvtools.NsysConfig(env=env)
+    )
+
+def lookup_kerns(kerns : 'list[Kernel]', uid : str):
     return list(filter(lambda k: k.nvtx_range == uid, kerns))
 
-def process_region(name, yd, kerns : 'list[prof.Kernel]', outfile):
-    if yd is None: yd = []
+def stitch_ops_kerns(
+    op_uids : 'list[str]',
+    kerns : 'list[Kernel]'
+) -> 'list[Operator]':
+    return [
+        Operator(uid=uid, kerns=lookup_kerns(kerns, uid))
+        for uid in op_uids
+    ]
 
-    ops = []
-    for opd in yd:
-        ops.append(Operator(
-            uid=opd['uid'],
-            kerns=lookup_kerns(kerns, opd['uid'])
-        ))
+def stitch_and_print_region(
+    rname : str,
+    op_uids : 'list[str]',
+    kerns : 'list[Kernel]',
+    outfile,
+    indent : int = 0
+):
+    if op_uids is None: op_uids = []
 
-    print(f'{name}:', file=outfile)
+    print(f'{"  " * indent}{rname}:', file=outfile)
     op : Operator
-    for op in ops:
-        opname = op.uid.split(':')[1]
-        if opname in ignore_aten_ops: continue
-        op.print_yaml(file=outfile)
+    for op in stitch_ops_kerns(op_uids, kerns):
+        op.print_yaml(file=outfile, indent=indent + 1)
 
 
 def run_tracing(prog_args, kerns_file):
@@ -129,5 +124,5 @@ def run_tracing(prog_args, kerns_file):
 
         with open(kerns_file, 'w') as f:
             for rname in yd.keys():
-                process_region(rname, yd[rname], kerns, f)
+                stitch_and_print_region(rname, yd[rname], kerns, f, indent=0)
 

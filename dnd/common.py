@@ -101,11 +101,11 @@ class Operator:
     uid : str
     kerns : 'list[Kernel]'
 
-    def print_yaml(self, file=sys.stdout):
-        print(f'  - uid: {self.uid}', file=file)
-        print(f'    kerns:', file=file)
+    def print_yaml(self, file=sys.stdout, indent=0):
+        print(f'{"  " * indent}- uid: {self.uid}', file=file)
+        print(f'{"  " * indent}  kerns:', file=file)
         for k in self.kerns:
-            print(f'      - {k.yaml_repr}', file=file)
+            print(f'{"  " * indent}    - {k.yaml_repr}', file=file)
 
     @staticmethod
     def from_yaml(yd):

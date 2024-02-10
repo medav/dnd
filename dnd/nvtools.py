@@ -3,7 +3,7 @@ import sys
 import functools
 import tempfile
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import subprocess
 import json
 
@@ -39,8 +39,6 @@ def get_nsys_version(path : str):
     return subprocess.check_output([path, '--version']) \
         .decode().strip().split(' ')[-1].split('-')[0]
 
-
-
 class Reader(object):
     def __init__(self, g):
         self.g = g
@@ -68,18 +66,32 @@ def read_nsys_output(output):
 
     for line in it: yield line + '\n'
 
-def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
-    use_cuda_profiler_capture = kwargs.get('use_cuda_profiler_capture', False)
-    ncu_replay_mode = kwargs.get('ncu_replay_mode', 'application')
-    ncu_metrics = kwargs.get('ncu_metrics', default_metrics)
-    ncu_use_nvtx = kwargs.get('ncu_use_nvtx', False)
+@dataclass(frozen=True)
+class NcuConfig:
+    replay_mode : str = 'application'
+    metrics : 'list[str]' = field(default_factory=lambda: default_metrics)
+    use_nvtx : bool = False
+    env : 'dict[str, str]' = field(default_factory=lambda: os.environ.copy())
 
-    print('>>> Running NCU...')
 
-    ncu_env = kwargs.get('ncu_env', os.environ.copy())
+@dataclass(frozen=True)
+class NsysConfig:
+    env : 'dict[str, str]' = field(default_factory=lambda: os.environ.copy())
+
+def run_ncu_nsys(
+    prog_args : 'list[str]',
+    use_cuda_profiler_api : bool = False,
+    ncu_config : NcuConfig = NcuConfig(),
+    nsys_config : NsysConfig = NsysConfig(),
+    quiet : bool = False
+) -> 'list[Kernel]':
+
+    if not quiet: print('>>> Running NCU...')
+
+    ncu_env = ncu_config.env.copy()
     ncu_env['CUDA_LAUNCH_BLOCKING'] = '1'
 
-    if ncu_use_nvtx:
+    if ncu_config.use_nvtx:
         nvtx_args = [
             '--nvtx',
             '--print-nvtx-rename', 'kernel'
@@ -92,14 +104,14 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
         '--csv',
         *nvtx_args,
         '--target-processes', 'all',
-        '--profile-from-start', 'no' if use_cuda_profiler_capture else 'yes',
-        '--replay-mode', ncu_replay_mode,
-        '--metrics', ','.join(ncu_metrics)
+        '--profile-from-start', 'no' if use_cuda_profiler_api else 'yes',
+        '--replay-mode', ncu_config.replay_mode,
+        '--metrics', ','.join(ncu_config.metrics)
     ] + prog_args
 
     ncu_output = subprocess.check_output(cmdline, env=ncu_env).decode()
 
-    print('>>> Done!')
+    if not quiet:print('>>> Done!')
 
 
     ncu_df = pd.read_csv(
@@ -120,6 +132,8 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
     print('>>> Running NSYS...')
     ofile = tempfile.mktemp(suffix='.nsys-rep')
 
+    if not quiet: nsys_env = nsys_config.env.copy()
+
     cmdline = [
         NSYS_PATH,
         'profile',
@@ -127,15 +141,15 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
         '-o', ofile
     ] + prog_args
 
-    if use_cuda_profiler_capture:
+    if use_cuda_profiler_api:
         cmdline += [
             '--capture-range=cudaProfilerApi',
             '--capture-range-end=stop'
         ]
 
-    subprocess.check_output(cmdline).decode()
+    subprocess.check_output(cmdline, env=nsys_env).decode()
 
-    print('>>> Done!')
+    if not quiet: print('>>> Done!')
 
     report_name = {
         '2022.1.3.3': 'gputrace',
@@ -152,7 +166,6 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
     stats_output = subprocess.check_output(stats_cmdline).decode()
     os.remove(ofile)
 
-
     nsys_df = pd.read_csv(
         Reader(read_nsys_output(stats_output)),
         low_memory=False,
@@ -161,7 +174,7 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
     ordered_ids = sorted(ncu_names.keys())
     ordered_names = [ncu_names[i] for i in ordered_ids]
 
-    if ncu_use_nvtx:
+    if ncu_config.use_nvtx:
         nvtx_ranges = []
         new_names = []
 
@@ -202,9 +215,4 @@ def run_prof(prog_args, **kwargs) -> 'list[Kernel]':
 
     assert kid == len(ordered_ids)
     return kerns
-
-if __name__ == '__main__':
-    kerns = run_prof(sys.argv[2:])
-    for k in kerns:
-        print(k.name)
 

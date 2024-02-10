@@ -21,5 +21,5 @@ def roi(x):
 
     return y
 
-dnd.trace(roi, x)
+dnd.profile(roi, x)
 
