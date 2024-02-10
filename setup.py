@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='dndlprof',
-    version='0.2.0',
+    version='0.3.0',
     author='Michael Davies',
     author_email='michaelstoby@gmail.com',
     description='A simple tool for profiling and tracing PyTorch programs on NVIDIA GPUs',
