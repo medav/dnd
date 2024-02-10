@@ -130,8 +130,8 @@ def run_ncu_nsys(
 
 
     with tempfile.NamedTemporaryFile(suffix='.nsys-rep') as temp_nsys_rep:
-        print('>>> Running NSYS...')
-        if not quiet: nsys_env = nsys_config.env.copy()
+        if not quiet: print('>>> Running NSYS...')
+        nsys_env = nsys_config.env.copy()
 
         cmdline = [
             NSYS_PATH,
