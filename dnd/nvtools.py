@@ -138,7 +138,7 @@ def run_ncu_nsys(
             NSYS_PATH,
             'profile',
             '-t', 'cuda,cudnn,cublas',
-            '-o', temp_nsys_rep
+            '-o', temp_nsys_rep.name
         ] + prog_args
 
         if use_cuda_profiler_api:
@@ -161,7 +161,7 @@ def run_ncu_nsys(
             'stats',
             '-r', report_name,
             '-f', 'csv',
-            temp_nsys_rep
+            temp_nsys_rep.name
         ]
 
         with check_subprocess():
