@@ -129,42 +129,40 @@ def run_ncu_nsys(
         ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
 
 
-    print('>>> Running NSYS...')
-    ofile = tempfile.mktemp(suffix='.nsys-rep')
+    with tempfile.NamedTemporaryFile(suffix='.nsys-rep') as temp_nsys_rep:
+        print('>>> Running NSYS...')
+        if not quiet: nsys_env = nsys_config.env.copy()
 
-    if not quiet: nsys_env = nsys_config.env.copy()
+        cmdline = [
+            NSYS_PATH,
+            'profile',
+            '-t', 'cuda,cudnn,cublas',
+            '-o', temp_nsys_rep
+        ] + prog_args
 
-    cmdline = [
-        NSYS_PATH,
-        'profile',
-        '-t', 'cuda,cudnn,cublas',
-        '-o', ofile
-    ] + prog_args
+        if use_cuda_profiler_api:
+            cmdline += [
+                '--capture-range=cudaProfilerApi',
+                '--capture-range-end=stop'
+            ]
 
-    if use_cuda_profiler_api:
-        cmdline += [
-            '--capture-range=cudaProfilerApi',
-            '--capture-range-end=stop'
+        subprocess.check_output(cmdline, env=nsys_env).decode()
+
+        if not quiet: print('>>> Done!')
+
+        report_name = {
+            '2022.1.3.3': 'gputrace',
+        }.get(get_nsys_version(NSYS_PATH), 'cuda_gpu_trace')
+
+        stats_cmdline = [
+            NSYS_PATH,
+            'stats',
+            '-r', report_name,
+            '-f', 'csv',
+            temp_nsys_rep
         ]
 
-    subprocess.check_output(cmdline, env=nsys_env).decode()
-
-    if not quiet: print('>>> Done!')
-
-    report_name = {
-        '2022.1.3.3': 'gputrace',
-    }.get(get_nsys_version(NSYS_PATH), 'cuda_gpu_trace')
-
-    stats_cmdline = [
-        NSYS_PATH,
-        'stats',
-        '-r', report_name,
-        '-f', 'csv',
-        ofile
-    ]
-
-    stats_output = subprocess.check_output(stats_cmdline).decode()
-    os.remove(ofile)
+        stats_output = subprocess.check_output(stats_cmdline).decode()
 
     nsys_df = pd.read_csv(
         Reader(read_nsys_output(stats_output)),
