@@ -162,7 +162,7 @@ class Profile:
             yd = yaml.safe_load(f)
 
         return Profile(
-            params=yd['Benchmark Parameters'],
+            params=yd['params'],
             bench=yd['bench'],
             trace={
                 k: [Operator.from_yaml(opd) for opd in v] \

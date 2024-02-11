@@ -32,18 +32,15 @@ def print_config():
     print(f'==================================================================')
     print(f'Benchmark Parameters:')
     print(f'  Device: {dev}')
-    print(f'  Mode: {mode}')
-    if mode == Mode.BENCH:
-        print(f'  + Num Warmup Iters: {bench_nw}')
-        print(f'  + Num Bench Iters: {bench_ni}')
+    print(f'  (Bench) Num Warmup Iters: {bench_nw}')
+    print(f'  (Bench) Num Bench Iters: {bench_ni}')
     print(f'  Batch Size: {bs}')
     print(f'  Data Type: {dtype}')
     print(f'==================================================================')
 
 def dump_yaml(f, indent=0):
-    print(f'{"  " * indent}Benchmark Parameters:', file=f)
+    print(f'{"  " * indent}params:', file=f)
     print(f'{"  " * indent}  Device: {dev}', file=f)
-    print(f'{"  " * indent}  Mode: {mode}', file=f)
     print(f'{"  " * indent}  Num Warmup Iters: {bench_nw}', file=f)
     print(f'{"  " * indent}  Num Bench Iters: {bench_ni}', file=f)
     print(f'{"  " * indent}  Batch Size: {bs}', file=f)
