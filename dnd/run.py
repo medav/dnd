@@ -50,25 +50,23 @@ def stat():
 
 
 def overhead():
-    idx = sys.argv.index('--')
-    tool_args = sys.argv[1:idx]
-    prog_args = sys.argv[idx + 1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', type=str, help='Profile datafile')
+    args = parser.parse_args(sys.argv[1:])
 
-    env = os.environ.copy()
-    env['DND_MODE'] = 'trace'
+    prof = Profile.from_file(args.filename)
 
-    kerns = nvtools.run_ncu_nsys(
-        prog_args,
-        ncu_config=nvtools.NcuConfig(env=env),
-        nsys_config=nvtools.NsysConfig(env=env)
-    )
+    bench_time_ms = prof.bench['avg_time'] * 1e3
+    klat_ms = sum(
+        k.lat
+        for _, region in prof.trace.items()
+        for op in region
+        for k in op.kerns
+    ) / 1e6
 
-    avg_time_ms = bench.run_bench(prog_args) * 1e3
-
-    klat_ms = sum(k.lat for k in kerns) / 1e6
     print(f'Kernel Latency: {klat_ms:.3f} ms')
-    print(f'Total (Avg) Latency: {avg_time_ms:.3f} ms')
-    print(f'Overhead: {(avg_time_ms - klat_ms) / avg_time_ms * 100:.2f}%')
+    print(f'Total (Avg) Latency: {bench_time_ms:.3f} ms')
+    print(f'Overhead: {(bench_time_ms - klat_ms) / bench_time_ms * 100:.2f}%')
 
 
 if __name__ == '__main__':
