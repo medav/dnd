@@ -20,9 +20,9 @@ def main():
     parser.add_argument('-o', '--outfile', type=str, default='profile.yaml', help='Output profile data to file')
     args = parser.parse_args(tool_args)
 
-    with tempfile.NamedTemporaryFile(suffix='.yaml') as temp_kern_trace_file:
-        kerns = tracer.run_kernel_trace(prog_args, temp_kern_trace_file.name)
-        oplists = yaml.safe_load(open(temp_kern_trace_file.name, 'r'))
+    with temp_file(suffix='.yaml') as temp_kern_trace_file:
+        kerns = tracer.run_kernel_trace(prog_args, temp_kern_trace_file)
+        oplists = yaml.safe_load(open(temp_kern_trace_file, 'r'))
 
     avg_time = bench.run_bench(prog_args)
 
