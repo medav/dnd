@@ -78,14 +78,12 @@ class NcuConfig:
 class NsysConfig:
     env : 'dict[str, str]' = field(default_factory=lambda: os.environ.copy())
 
-def run_ncu_nsys(
+def run_ncu(
     prog_args : 'list[str]',
     use_cuda_profiler_api : bool = False,
     ncu_config : NcuConfig = NcuConfig(),
-    nsys_config : NsysConfig = NsysConfig(),
     quiet : bool = False
-) -> 'list[Kernel]':
-
+):
     if not quiet: print('>>> Running NCU...')
 
     ncu_env = ncu_config.env.copy()
@@ -129,6 +127,22 @@ def run_ncu_nsys(
         if row['ID'] not in ncu_metrics: ncu_metrics[row['ID']] = dict()
         ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
 
+    return ncu_names, ncu_metrics
+
+def run_ncu_nsys(
+    prog_args : 'list[str]',
+    use_cuda_profiler_api : bool = False,
+    ncu_config : NcuConfig = NcuConfig(),
+    nsys_config : NsysConfig = NsysConfig(),
+    quiet : bool = False
+) -> 'list[Kernel]':
+
+    ncu_names, ncu_metrics = run_ncu(
+        prog_args,
+        use_cuda_profiler_api,
+        ncu_config,
+        quiet
+    )
 
     with temp_file(suffix='.nsys-rep') as temp_nsys_rep:
         if not quiet: print('>>> Running NSYS...')
