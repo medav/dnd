@@ -136,7 +136,8 @@ class Operator:
     def from_yaml(yd):
         return Operator(
             uid=yd['uid'],
-            kerns=[Kernel.from_yaml(kd) for kd in yd['kerns']]
+            kerns=[Kernel.from_yaml(kd) for kd in yd['kerns']] \
+                if yd['kerns'] is not None else []
         )
 
 def read_kerns_yaml(filename : str) -> 'dict[str, list[Operator]]':
@@ -145,3 +146,24 @@ def read_kerns_yaml(filename : str) -> 'dict[str, list[Operator]]':
 
     return {k: [Operator.from_yaml(opd) for opd in yd[k]] for k in yd}
 
+
+@dataclass
+class Profile:
+    params : dict
+    bench : dict
+    trace : dict
+
+    @staticmethod
+    def from_file(filename : str) -> 'Profile':
+        with open(filename) as f:
+            yd = yaml.safe_load(f)
+
+        return Profile(
+            params=yd['Benchmark Parameters'],
+            bench=yd['bench'],
+            trace={
+                k: [Operator.from_yaml(opd) for opd in v] \
+                    if v is not None else []
+                for k, v in yd['trace'].items()
+            }
+        )
