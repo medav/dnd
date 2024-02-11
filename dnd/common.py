@@ -48,6 +48,31 @@ def temp_file(suffix : str, delete : bool = True):
     yield fname
     if delete: os.remove(fname)
 
+dnd_config_file = get_optional_env('DND_CONFIG', '~/.dnd-config.yaml')
+
+@dataclass
+class GlobalConfig:
+    ncu_replay_mode : str = 'application'
+    nsys_num_samples : int = 10
+
+    @staticmethod
+    def from_file(fname : str):
+        with open(fname, 'r') as f:
+            yd = yaml.safe_load(f)
+
+        defconfig = GlobalConfig()
+
+        return GlobalConfig(
+            ncu_replay_mode=yd.get('ncu_replay_mode', defconfig.ncu_replay_mode),
+            nsys_num_samples=yd.get('nsys_num_samples', defconfig.nsys_num_samples)
+        )
+
+dnd_config_file = os.path.expanduser(dnd_config_file)
+if os.path.exists(dnd_config_file):
+    dnd_config = GlobalConfig.from_file(dnd_config_file)
+else:
+    dnd_config = GlobalConfig()
+
 @dataclass
 class Kernel:
     kid : int
