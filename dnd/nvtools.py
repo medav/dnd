@@ -129,20 +129,12 @@ def run_ncu(
 
     return ncu_names, ncu_metrics
 
-def run_ncu_nsys(
+def run_nsys(
     prog_args : 'list[str]',
     use_cuda_profiler_api : bool = False,
-    ncu_config : NcuConfig = NcuConfig(),
     nsys_config : NsysConfig = NsysConfig(),
     quiet : bool = False
-) -> 'list[Kernel]':
-
-    ncu_names, ncu_metrics = run_ncu(
-        prog_args,
-        use_cuda_profiler_api,
-        ncu_config,
-        quiet
-    )
+):
 
     with temp_file(suffix='.nsys-rep') as temp_nsys_rep:
         if not quiet: print('>>> Running NSYS...')
@@ -185,6 +177,31 @@ def run_ncu_nsys(
         Reader(read_nsys_output(stats_output)),
         low_memory=False,
         thousands=r',')
+
+    return nsys_df
+
+def run_ncu_nsys(
+    prog_args : 'list[str]',
+    use_cuda_profiler_api : bool = False,
+    ncu_config : NcuConfig = NcuConfig(),
+    nsys_config : NsysConfig = NsysConfig(),
+    quiet : bool = False
+) -> 'list[Kernel]':
+
+    ncu_names, ncu_metrics = run_ncu(
+        prog_args,
+        use_cuda_profiler_api,
+        ncu_config,
+        quiet
+    )
+
+    nsys_df = run_nsys(
+        prog_args,
+        use_cuda_profiler_api,
+        nsys_config,
+        quiet
+    )
+
 
     ordered_ids = sorted(ncu_names.keys())
     ordered_names = [ncu_names[i] for i in ordered_ids]
