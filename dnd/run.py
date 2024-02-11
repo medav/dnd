@@ -58,7 +58,7 @@ def overhead():
 
     bench_time_ms = prof.bench['avg_time'] * 1e3
     klat_ms = sum(
-        k.lat
+        k.nsys_avg_lat_ns
         for _, region in prof.trace.items()
         for op in region
         for k in op.kerns

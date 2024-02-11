@@ -87,7 +87,7 @@ def run_kernel_trace(prog_args, kernel_trace_file):
     return nvtools.run_ncu_nsys(
         prog_args,
         ncu_config=nvtools.NcuConfig(use_nvtx=True, env=ncu_env),
-        nsys_config=nvtools.NsysConfig(env=env)
+        nsys_config=nvtools.NsysConfig(num_samples=10, env=env)
     )
 
 def lookup_kerns(kerns : 'list[Kernel]', uid : str):

@@ -1,6 +1,7 @@
 import os
 import sys
 import functools
+import numpy as np
 import tempfile
 import pandas as pd
 from dataclasses import dataclass, field
@@ -76,6 +77,7 @@ class NcuConfig:
 
 @dataclass(frozen=True)
 class NsysConfig:
+    num_samples : int = 1
     env : 'dict[str, str]' = field(default_factory=lambda: os.environ.copy())
 
 def run_ncu(
@@ -112,22 +114,10 @@ def run_ncu(
 
     if not quiet:print('>>> Done!')
 
-
-    ncu_df = pd.read_csv(
+    return pd.read_csv(
         Reader(read_ncu_output(ncu_output)),
         low_memory=False,
         thousands=r',')
-
-    ncu_names = dict()
-    ncu_metrics = dict()
-
-    for row in ncu_df.iterrows():
-        row = row[1]
-        ncu_names[row['ID']] = row['Kernel Name']
-        if row['ID'] not in ncu_metrics: ncu_metrics[row['ID']] = dict()
-        ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
-
-    return ncu_names, ncu_metrics
 
 def run_nsys(
     prog_args : 'list[str]',
@@ -173,12 +163,10 @@ def run_nsys(
         with check_subprocess():
             stats_output = subprocess.check_output(stats_cmdline).decode()
 
-    nsys_df = pd.read_csv(
+    return pd.read_csv(
         Reader(read_nsys_output(stats_output)),
         low_memory=False,
         thousands=r',')
-
-    return nsys_df
 
 def run_ncu_nsys(
     prog_args : 'list[str]',
@@ -188,29 +176,40 @@ def run_ncu_nsys(
     quiet : bool = False
 ) -> 'list[Kernel]':
 
-    ncu_names, ncu_metrics = run_ncu(
+    ncu_df = run_ncu(
         prog_args,
         use_cuda_profiler_api,
         ncu_config,
         quiet
     )
 
-    nsys_df = run_nsys(
-        prog_args,
-        use_cuda_profiler_api,
-        nsys_config,
-        quiet
-    )
+    ncu_names = dict()
+    ncu_metrics = dict()
 
+    for row in ncu_df.iterrows():
+        row = row[1]
+        ncu_names[row['ID']] = row['Kernel Name']
+        if row['ID'] not in ncu_metrics: ncu_metrics[row['ID']] = dict()
+        ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
 
-    ordered_ids = sorted(ncu_names.keys())
-    ordered_names = [ncu_names[i] for i in ordered_ids]
+    ncu_ordered_ids = sorted(ncu_names.keys())
+    ncu_ordered_names = [ncu_names[i] for i in ncu_ordered_ids]
+
+    nsys_dfs = [
+        run_nsys(
+            prog_args,
+            use_cuda_profiler_api,
+            nsys_config,
+            quiet
+        )
+        for _ in range(nsys_config.num_samples)
+    ]
 
     if ncu_config.use_nvtx:
         nvtx_ranges = []
         new_names = []
 
-        for n in ordered_names:
+        for n in ncu_ordered_names:
             if '/' in n:
                 nvtx_range, name = n.split('/')
                 nvtx_ranges.append(nvtx_range)
@@ -219,32 +218,35 @@ def run_ncu_nsys(
                 nvtx_ranges.append('')
                 new_names.append(n)
 
-        ordered_names = new_names
+        ncu_ordered_names = new_names
 
-    else: nvtx_ranges = [''] * len(ordered_names)
+    else: nvtx_ranges = [''] * len(ncu_ordered_names)
 
     kerns = []
 
     kid = 0
-    for row in nsys_df.iterrows():
-        row = row[1]
-        if kid >= len(ordered_ids): break
-        if row['Name'] != ordered_names[kid]: continue
+    for rows in zip(*[df.iterrows() for df in nsys_dfs]):
+        rows = [r[1] for r in rows]
+        if kid >= len(ncu_ordered_ids): break
+        if rows[0]['Name'] != ncu_ordered_names[kid]: continue
+
+        assert all(r['Name'] == rows[0]['Name'] for r in rows)
 
         kerns.append(Kernel(
             kid=kid,
-            name=row['Name'],
+            name=rows[0]['Name'],
+            nsys_avg_lat_ns=np.mean([r['Duration (ns)'] for r in rows]),
             nvtx_range=nvtx_ranges[kid],
-            grid= (int(row['GrdX']), int(row['GrdY']), int(row['GrdZ'])),
-            block=(int(row['BlkX']), int(row['BlkY']), int(row['BlkZ'])),
-            reg_per_thread=int(row['Reg/Trd']),
-            static_smem=int(float(row['StcSMem (MB)']) * 2**20),
-            dynamic_smem=int(float(row['DymSMem (MB)']) * 2**20),
-            metrics=ncu_metrics[ordered_ids[kid]]
+            grid=(int(rows[0]['GrdX']), int(rows[0]['GrdY']), int(rows[0]['GrdZ'])),
+            block=(int(rows[0]['BlkX']), int(rows[0]['BlkY']), int(rows[0]['BlkZ'])),
+            reg_per_thread=int(rows[0]['Reg/Trd']),
+            static_smem=int(float(rows[0]['StcSMem (MB)']) * 2**20),
+            dynamic_smem=int(float(rows[0]['DymSMem (MB)']) * 2**20),
+            metrics=ncu_metrics[ncu_ordered_ids[kid]]
         ))
 
         kid += 1
 
-    assert kid == len(ordered_ids)
+    assert kid == len(ncu_ordered_ids)
     return kerns
 

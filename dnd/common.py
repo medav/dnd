@@ -52,6 +52,7 @@ def temp_file(suffix : str, delete : bool = True):
 class Kernel:
     kid : int
     name : str
+    nsys_avg_lat_ns : float
     nvtx_range : str
     grid : tuple
     block : tuple
@@ -82,7 +83,7 @@ class Kernel:
     def tot_smem(self): return self.static_smem + self.dynamic_smem
 
     @property
-    def lat(self): return self.metrics['gpu__time_duration.sum']
+    def ncu_lat_ns(self): return self.metrics['gpu__time_duration.sum']
 
     @property
     def dram_util(self): return self.metrics['gpu__dram_throughput.avg.pct_of_peak_sustained_elapsed'] / 100
@@ -98,6 +99,7 @@ class Kernel:
         return '{' + ', '.join([
             f'kid: {self.kid}',
             f'name: "{self.name}"',
+            f'nsys_avg_lat_ns: {self.nsys_avg_lat_ns}',
             f'nvtx_range: "{self.nvtx_range}"',
             f'grid: "{self.grid}"',
             f'block: "{self.block}"',
@@ -112,6 +114,7 @@ class Kernel:
         return Kernel(
             kid=yd['kid'],
             name=yd['name'],
+            nsys_avg_lat_ns=yd['nsys_avg_lat_ns'],
             nvtx_range=yd['nvtx_range'],
             grid=parse_int_tuple(yd['grid']),
             block=parse_int_tuple(yd['block']),
