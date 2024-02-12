@@ -57,17 +57,12 @@ def overhead():
 
     prof = Profile.from_file(args.filename)
 
-    bench_time_ms = prof.bench['avg_time'] * 1e3
-    klat_ms = sum(
-        k.nsys_avg_lat_ns
-        for _, region in prof.trace.items()
-        for op in region
-        for k in op.kerns
-    ) / 1e6
+    avg_time_ms = prof.bench['avg_time_ms']
+    cuda_avg_time_ms = prof.bench['cuda_avg_time_ms']
 
-    print(f'Kernel Latency: {klat_ms:.3f} ms')
-    print(f'Total (Avg) Latency: {bench_time_ms:.3f} ms')
-    print(f'Overhead: {(bench_time_ms - klat_ms) / bench_time_ms * 100:.2f}%')
+    print(f'Kernel Latency: {cuda_avg_time_ms:.3f} ms')
+    print(f'Total (Avg) Latency: {avg_time_ms:.3f} ms')
+    print(f'Overhead: {(avg_time_ms - cuda_avg_time_ms) / avg_time_ms * 100:.2f}%')
 
 
 if __name__ == '__main__':
