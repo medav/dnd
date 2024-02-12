@@ -1,6 +1,7 @@
 import torch
 import torch.fx
 from functorch.compile import aot_module
+import torch.profiler
 
 import time
 
@@ -29,18 +30,31 @@ def _benchmark(roi, *args, no_compile : bool = False, **kwargs):
     for i in range(env.bench_nw): roi(*args, **kwargs)
 
     print(f'Running {env.bench_ni} Iters')
-    tt0 = time.perf_counter()
     torch.cuda.synchronize()
-    for i in range(env.bench_ni): roi(*args, **kwargs)
-    torch.cuda.synchronize()
-    tt1 = time.perf_counter()
+    with torch.profiler.profile(
+        activities=[
+            torch.profiler.ProfilerActivity.CPU,
+            torch.profiler.ProfilerActivity.CUDA
+        ]
+    ) as prof:
+        tt0 = time.perf_counter()
+        for i in range(env.bench_ni): roi(*args, **kwargs)
+        torch.cuda.synchronize()
+        tt1 = time.perf_counter()
 
     print(f'Elapsed Time: {tt1 - tt0:.3f} s')
 
+    cuda_time_us = 0
+    for ev in prof.events():
+        if ev.device_type == torch.profiler.DeviceType.CUDA:
+            cuda_time_us += ev.cuda_time
+
     if bench.benchfile is not None:
         with open(bench.benchfile, 'a') as f:
-            print(f'total_time: {tt1 - tt0}', file=f)
-            print(f'avg_time: {(tt1 - tt0) / env.bench_ni}', file=f)
+            print(f'total_time_ms: {(tt1 - tt0) * 1000}', file=f)
+            print(f'avg_time_ms: {(tt1 - tt0) * 1000 / env.bench_ni}', file=f)
+            print(f'cuda_total_time_ms: {cuda_time_us / 1000}', file=f)
+            print(f'cuda_avg_time_ms: {cuda_time_us / 1000 / env.bench_ni}', file=f)
 
 def _trace(roi, *args, no_compile : bool = False, **kwargs):
     tracer.op_id = 0

@@ -25,5 +25,5 @@ def run_bench(prog_args, nw=10, ni=100):
         with open(bench_result_file.name, 'r') as f:
             bench_result = yaml.safe_load(f)
 
-        return bench_result['avg_time']
+        return bench_result
 

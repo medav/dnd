@@ -24,13 +24,14 @@ def main():
         kerns = tracer.run_kernel_trace(prog_args, temp_kern_trace_file)
         oplists = yaml.safe_load(open(temp_kern_trace_file, 'r'))
 
-    avg_time = bench.run_bench(prog_args)
+    bench_result = bench.run_bench(prog_args)
 
     with open(args.outfile, 'w') as f:
         env.dump_yaml(f)
 
         print(f'bench:', file=f)
-        print(f'  avg_time: {avg_time}', file=f)
+        for k, v in bench_result.items():
+            print(f'  {k}: {v}', file=f)
 
         print(f'trace:', file=f)
         for rname in oplists.keys():
