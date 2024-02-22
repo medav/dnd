@@ -11,15 +11,22 @@ from . import env
 
 def comma_separated_ints(s): return [int(x) for x in s.split(',')]
 
-def main():
-    idx = sys.argv.index('--')
-    tool_args = sys.argv[1:idx]
-    prog_args = sys.argv[idx + 1:]
+def run_bare(args, prog_args : 'list[str]'):
+    kerns = tracer.run_kernel_trace(prog_args, None)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--outfile', type=str, default='profile.yaml', help='Output profile data to file')
-    args = parser.parse_args(tool_args)
+    with open(args.outfile, 'w') as f:
+        env.dump_yaml(f)
 
+        print(f'bench: None', file=f)
+
+        print(f'trace:', file=f)
+        print(f'  region:', file=f)
+        for i, k in enumerate(kerns):
+            op = Operator(uid=f'unknown:{i}', kerns=[k])
+            op.print_yaml(file=f, indent=2)
+
+
+def run_full(args, prog_args : 'list[str]'):
     with temp_file(suffix='.yaml') as temp_kern_trace_file:
         kerns = tracer.run_kernel_trace(prog_args, temp_kern_trace_file)
         oplists = yaml.safe_load(open(temp_kern_trace_file, 'r'))
@@ -38,6 +45,18 @@ def main():
             tracer.stitch_and_print_region(
                 rname, oplists[rname], kerns, f, indent=1)
 
+def main():
+    idx = sys.argv.index('--')
+    tool_args = sys.argv[1:idx]
+    prog_args = sys.argv[idx + 1:]
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-o', '--outfile', type=str, default='profile.yaml', help='Output profile data to file')
+    parser.add_argument('-b', '--bare', action='store_true', help='Run without framework tracing')
+    args = parser.parse_args(tool_args)
+
+    if args.bare: run_bare(args, prog_args)
+    else: run_full(args, prog_args)
 
 def stat():
     parser = argparse.ArgumentParser()
