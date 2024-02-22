@@ -82,7 +82,8 @@ def run_kernel_trace(prog_args, kernel_trace_file):
     env['DND_MODE'] = 'trace'
 
     ncu_env = env.copy()
-    env['DND_TRACEFILE'] = kernel_trace_file
+    if kernel_trace_file is not None:
+        env['DND_TRACEFILE'] = kernel_trace_file
 
     return nvtools.run_ncu_nsys(
         prog_args,
