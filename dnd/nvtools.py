@@ -103,11 +103,10 @@ def run_ncu(
         NCU_PATH,
         '--csv',
         *nvtx_args,
-        '--target-processes', 'all',
         '--profile-from-start', 'no' if use_cuda_profiler_api else 'yes',
         '--replay-mode', ncu_config.replay_mode,
         '--metrics', ','.join(ncu_config.metrics)
-    ] + prog_args
+    ] + dnd_config.ncu_extra_cli + prog_args
 
     with check_subprocess():
         ncu_output = subprocess.check_output(cmdline, env=ncu_env).decode()

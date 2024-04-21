@@ -1,6 +1,6 @@
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from distutils.spawn import find_executable
 import functools
 import json
@@ -53,6 +53,7 @@ dnd_config_file = get_optional_env('DND_CONFIG', '~/.dnd-config.yaml')
 @dataclass
 class GlobalConfig:
     ncu_replay_mode : str = 'application'
+    ncu_extra_cli : list[str] = field(default_factory=list)
     nsys_num_samples : int = 10
 
     @staticmethod
@@ -64,6 +65,7 @@ class GlobalConfig:
 
         return GlobalConfig(
             ncu_replay_mode=yd.get('ncu_replay_mode', defconfig.ncu_replay_mode),
+            ncu_extra_cli=yd.get('ncu_extra_cli', defconfig.ncu_extra_cli),
             nsys_num_samples=yd.get('nsys_num_samples', defconfig.nsys_num_samples)
         )
 
