@@ -53,7 +53,7 @@ def trace_compile_fn(gm : torch.fx.GraphModule, args):
     def wrapper(*args, **kwargs):
         return KernelTracer(gm).run(*args, **kwargs)
 
-    return make_boxed_func(wrapper)
+    return wrapper
 
 def aot_compile_fn(gm : torch.fx.GraphModule, args):
     return aot_module(gm, trace_compile_fn)
