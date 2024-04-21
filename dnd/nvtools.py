@@ -89,7 +89,9 @@ def run_ncu(
     if not quiet: print('>>> Running NCU...')
 
     ncu_env = ncu_config.env.copy()
-    ncu_env['CUDA_LAUNCH_BLOCKING'] = '1'
+
+    if dnd_config.torch_cuda_launch_blocking:
+        ncu_env['CUDA_LAUNCH_BLOCKING'] = '1'
 
     if ncu_config.use_nvtx:
         nvtx_args = [

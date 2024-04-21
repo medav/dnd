@@ -55,6 +55,7 @@ class GlobalConfig:
     ncu_replay_mode : str = 'application'
     ncu_extra_cli : list[str] = field(default_factory=list)
     nsys_num_samples : int = 10
+    torch_cuda_launch_blocking : bool = True
 
     @staticmethod
     def from_file(fname : str):
@@ -64,9 +65,15 @@ class GlobalConfig:
         defconfig = GlobalConfig()
 
         return GlobalConfig(
-            ncu_replay_mode=yd.get('ncu_replay_mode', defconfig.ncu_replay_mode),
-            ncu_extra_cli=yd.get('ncu_extra_cli', defconfig.ncu_extra_cli),
-            nsys_num_samples=yd.get('nsys_num_samples', defconfig.nsys_num_samples)
+            ncu_replay_mode=yd.get(
+                'ncu_replay_mode', defconfig.ncu_replay_mode),
+            ncu_extra_cli=yd.get(
+                'ncu_extra_cli', defconfig.ncu_extra_cli),
+            nsys_num_samples=yd.get(
+                'nsys_num_samples', defconfig.nsys_num_samples),
+            torch_cuda_launch_blocking=yd.get(
+                'torch_cuda_launch_blocking',
+                defconfig.torch_cuda_launch_blocking)
         )
 
 dnd_config_file = os.path.expanduser(dnd_config_file)

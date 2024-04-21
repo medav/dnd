@@ -78,7 +78,6 @@ def trace_region(name):
 
 def run_kernel_trace(prog_args, kernel_trace_file):
     env = os.environ.copy()
-    env['CUDA_LAUNCH_BLOCKING'] = '1'
     env['DND_MODE'] = 'trace'
 
     ncu_env = env.copy()
