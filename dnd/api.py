@@ -66,11 +66,12 @@ def _trace(roi, *args, no_compile : bool = False, **kwargs):
     # In this case, we simply run the roi() as-is.
     #
 
-    if no_compile:
-        roi(*args, **kwargs)
-    else:
-        instrumented = instrument(roi)
-        instrumented(*args, **kwargs)
+    with torch.cuda.profiler.profile():
+        if no_compile:
+            roi(*args, **kwargs)
+        else:
+            instrumented = instrument(roi)
+            instrumented(*args, **kwargs)
 
 def profile(roi : 'callable', *args, **kwargs):
     env.print_config()

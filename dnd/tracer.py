@@ -38,9 +38,8 @@ class KernelTracer(torch.fx.Interpreter):
         global op_id
         op_uid = f'{op_id}:{target}'
         op_id += 1
-        with torch.cuda.profiler.profile():
-            with torch.cuda.nvtx.range(op_uid):
-                outs = super().call_function(target, args, kwargs)
+        with torch.cuda.nvtx.range(op_uid):
+            outs = super().call_function(target, args, kwargs)
 
 
         if tracefile is not None:

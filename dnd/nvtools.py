@@ -82,7 +82,7 @@ class NsysConfig:
 
 def run_ncu(
     prog_args : 'list[str]',
-    use_cuda_profiler_api : bool = False,
+    use_cuda_profiler_api : bool = True,
     ncu_config : NcuConfig = NcuConfig(),
     quiet : bool = False
 ):
@@ -122,7 +122,7 @@ def run_ncu(
 
 def run_nsys(
     prog_args : 'list[str]',
-    use_cuda_profiler_api : bool = False,
+    use_cuda_profiler_api : bool = True,
     nsys_config : NsysConfig = NsysConfig(),
     quiet : bool = False
 ):
@@ -171,7 +171,7 @@ def run_nsys(
 
 def run_ncu_nsys(
     prog_args : 'list[str]',
-    use_cuda_profiler_api : bool = False,
+    use_cuda_profiler_api : bool = True,
     ncu_config : NcuConfig = NcuConfig(),
     nsys_config : NsysConfig = NsysConfig(),
     quiet : bool = False
