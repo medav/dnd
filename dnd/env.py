@@ -7,12 +7,14 @@ from .common import *
 class Mode(enum.Enum):
     BENCH = 0
     TRACE = 1
+    TRACE_BARE = 2
 
     @staticmethod
     def from_str(s : str):
         return {
             'bench': Mode.BENCH,
             'trace': Mode.TRACE,
+            'trace_bare': Mode.TRACE_BARE,
         }[s]
 
 dev = torch.device(get_optional_env('DND_DEV', 'cuda:0'))

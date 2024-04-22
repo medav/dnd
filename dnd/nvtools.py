@@ -120,6 +120,46 @@ def run_ncu(
         low_memory=False,
         thousands=r',')
 
+
+def run_ncu_bare(
+    prog_args : 'list[str]',
+    use_cuda_profiler_api : bool = True,
+    ncu_config : NcuConfig = NcuConfig(),
+    quiet : bool = False
+) -> 'list[Kernel]':
+
+    ncu_df = run_ncu(
+        prog_args,
+        use_cuda_profiler_api,
+        ncu_config,
+        quiet
+    )
+
+    ncu_names = dict()
+    ncu_metrics = dict()
+
+    for row in ncu_df.iterrows():
+        row = row[1]
+        ncu_names[row['ID']] = row['Kernel Name']
+        if row['ID'] not in ncu_metrics: ncu_metrics[row['ID']] = dict()
+        ncu_metrics[row['ID']][row['Metric Name']] = row['Metric Value']
+
+    return [
+        Kernel(
+            kid=kid,
+            name=ncu_names[kid],
+            nsys_avg_lat_ns=None,
+            nvtx_range=None,
+            grid=None,
+            block=None,
+            reg_per_thread=None,
+            static_smem=None,
+            dynamic_smem=None,
+            metrics=ncu_metrics[kid]
+        )
+        for kid in ncu_names
+    ]
+
 def run_nsys(
     prog_args : 'list[str]',
     use_cuda_profiler_api : bool = True,

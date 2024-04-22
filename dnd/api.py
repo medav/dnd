@@ -73,11 +73,21 @@ def _trace(roi, *args, no_compile : bool = False, **kwargs):
             instrumented = instrument(roi)
             instrumented(*args, **kwargs)
 
+def _trace_bare(roi, *args, **kwargs):
+    # N.B. This differs from TRACE with no_compile=True slightly in that it's
+    # intended to be used for profiling applications with no instrumentation at
+    # all -- I.e. ONLY capture CUDA kernels, not FW ops.
+
+    with torch.cuda.profiler.profile():
+        roi(*args, **kwargs)
+
 def profile(roi : 'callable', *args, **kwargs):
     env.print_config()
     if env.mode == env.Mode.BENCH:
         _benchmark(roi, *args, **kwargs)
     elif env.mode == env.Mode.TRACE:
         _trace(roi, *args, **kwargs)
+    elif env.mode == env.Mode.TRACE_BARE:
+        _trace_bare(roi, *args, **kwargs)
     else:
         raise ValueError(f'Unknown mode: {env.mode}')

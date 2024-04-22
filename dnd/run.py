@@ -12,7 +12,10 @@ from . import env
 def comma_separated_ints(s): return [int(x) for x in s.split(',')]
 
 def run_bare(args, prog_args : 'list[str]'):
-    kerns = tracer.run_kernel_trace(prog_args, None)
+    ncu_env = os.environ.copy()
+    ncu_env['DND_MODE'] = 'trace_bare'
+    kerns = nvtools.run_ncu_bare(
+        prog_args, ncu_config=nvtools.NcuConfig(env=ncu_env))
 
     with open(args.outfile, 'w') as f:
         env.dump_yaml(f)
