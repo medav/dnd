@@ -15,7 +15,8 @@ def run_bare(args, prog_args : 'list[str]'):
     ncu_env = os.environ.copy()
     ncu_env['DND_MODE'] = 'trace_bare'
     kerns = nvtools.run_ncu_bare(
-        prog_args, ncu_config=nvtools.NcuConfig(env=ncu_env))
+        prog_args, ncu_config=nvtools.NcuConfig(
+            env=ncu_env, replay_mode=dnd_config.ncu_replay_mode))
 
     with open(args.outfile, 'w') as f:
         env.dump_yaml(f)
