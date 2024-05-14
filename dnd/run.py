@@ -19,15 +19,9 @@ def run_bare(args, prog_args : 'list[str]'):
             env=ncu_env, replay_mode=dnd_config.ncu_replay_mode))
 
     with open(args.outfile, 'w') as f:
-        env.dump_yaml(f)
-
-        print(f'bench: None', file=f)
-
         print(f'trace:', file=f)
-        print(f'  region:', file=f)
         for i, k in enumerate(kerns):
-            op = Operator(uid=f'unknown:{i}', kerns=[k])
-            op.print_yaml(file=f, indent=2)
+            print(f'  - {k.yaml_repr}', file=f)
 
 
 def run_full(args, prog_args : 'list[str]'):
