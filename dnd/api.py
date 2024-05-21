@@ -7,7 +7,6 @@ import time
 
 from .common import *
 from . import env
-from . import nvtools
 from . import tracer
 from . import bench
 
