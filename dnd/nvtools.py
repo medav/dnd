@@ -21,14 +21,6 @@ default_metrics = [
 NCU_PATH = get_optional_env('NCU_PATH', 'ncu')
 NSYS_PATH = get_optional_env('NSYS_PATH', 'nsys')
 
-if not command_exists(NCU_PATH):
-    print(f'NCU not found (NCU_PATH={NCU_PATH}). Please set NCU_PATH to valid ncu binary.', file=sys.stderr)
-    sys.exit(1)
-
-if not command_exists(NSYS_PATH):
-    print(f'NSYS not found (NSYS_PATH={NSYS_PATH}). Please set NSYS_PATH to valid nsys binary.', file=sys.stderr)
-    sys.exit(1)
-
 @functools.lru_cache
 def get_ncu_version(path : str):
     return subprocess.check_output([path, '--version']) \
@@ -86,6 +78,7 @@ def run_ncu(
     ncu_config : NcuConfig = NcuConfig(),
     quiet : bool = False
 ):
+    assert command_exists(NCU_PATH)
     if not quiet: print('>>> Running NCU...')
 
     ncu_env = ncu_config.env.copy()
@@ -166,6 +159,7 @@ def run_nsys(
     nsys_config : NsysConfig = NsysConfig(),
     quiet : bool = False
 ):
+    assert command_exists(NSYS_PATH)
 
     with temp_file(suffix='.nsys-rep') as temp_nsys_rep:
         if not quiet: print('>>> Running NSYS...')
